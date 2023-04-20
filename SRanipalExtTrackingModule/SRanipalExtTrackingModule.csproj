@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <Platforms>x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\vive_hmd.png" />
+    <EmbeddedResource Include="Assets\vive_hmd.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <None Remove="Assets\vive_face_tracker.png" />
+    <EmbeddedResource Include="Assets\vive_face_tracker.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="VRCFaceTracking.Core">
+      <HintPath>..\..\..\..\Downloads\VRCFaceTracking-Next\VRCFaceTracking\bin\x64\Debug\net7.0-windows10.0.19041.0\win10-x64\VRCFaceTracking.Core.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
