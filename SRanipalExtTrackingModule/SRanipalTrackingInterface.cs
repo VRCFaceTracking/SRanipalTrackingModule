@@ -46,8 +46,6 @@ namespace SRanipalExtTrackingInterface
 
             if (eyeEnabled && Utils.HasAdmin)
             {
-                isViveProEye = SRanipal_Eye_API.IsViveProEye();
-                
                 var found = false;
                 int tries = 0;
                 while (!found && tries < 15)
@@ -107,6 +105,9 @@ namespace SRanipalExtTrackingInterface
             if (lipEnabled)
                 streams.Add(lipStream);
             ModuleInformation.StaticImages = streams;
+
+            isViveProEye = SRanipal_Eye_API.IsViveProEye();
+
             return (eyeEnabled, lipEnabled);
         }
 
