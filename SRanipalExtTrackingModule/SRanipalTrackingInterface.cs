@@ -137,7 +137,7 @@ namespace SRanipalExtTrackingInterface
             if (Status != ModuleState.Active)
                 return;
             
-            if (UpdateMouth() != Error.WORK)
+            if (eyeEnabled && UpdateMouth() != Error.WORK)
             {
                 Logger.LogError("An error occured while getting lip data. This might be a wireless crash.");
                 Logger.LogWarning("Waiting 30 seconds before reinitializing to account for wireless users.");
@@ -146,7 +146,7 @@ namespace SRanipalExtTrackingInterface
                 return;
             }
 
-            if (UpdateEye() != Error.WORK)
+            if (lipEnabled && UpdateEye() != Error.WORK)
             {
                 Logger.LogError("An error occured while getting eye data. This might be a wireless crash.");
                 Logger.LogWarning("Waiting 30 seconds before reinitializing to account for wireless users.");
