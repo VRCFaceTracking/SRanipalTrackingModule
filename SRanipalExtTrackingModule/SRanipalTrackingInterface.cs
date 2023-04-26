@@ -134,6 +134,8 @@ namespace SRanipalExtTrackingInterface
         
         public override void Update()
         {
+            Thread.Sleep(10);
+
             if (Status != ModuleState.Active)
                 return;
             
@@ -154,8 +156,6 @@ namespace SRanipalExtTrackingInterface
                 //UnifiedLibManager.Initialize();
                 return;
             }
-
-            Thread.Sleep(10);
         }
 
         #endregion
