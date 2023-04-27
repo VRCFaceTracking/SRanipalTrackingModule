@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Microsoft.Win32;
 using ViveSR;
 using ViveSR.anipal;
 using ViveSR.anipal.Eye;
@@ -33,8 +34,17 @@ namespace SRanipalExtTrackingInterface
             // Look for SRanipal assemblies here. Placeholder for unmanaged assemblies not being embedded in the dll.
             var currentDllDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             
+            // Get the directory of the sr_runtime.exe program from our start menu shortcut. This is where the SRanipal dlls are located.
+            var srInstallDir = (string) Registry.LocalMachine.OpenSubKey(@"Software\VIVE\SRWorks\SRanipal")?.GetValue("ModuleFileName");
+
+            if (srInstallDir == null)
+            {
+                Logger.LogError("SRanipalExtTrackingModule: SRanipal not installed.");
+                return (false, false);
+            }
+            
             // Get the currently installed sr_runtime version. If it's above 1.3.6.* then we use ModuleLibs\\New
-            var srRuntimeVer = FileVersionInfo.GetVersionInfo("C:\\Program Files\\VIVE\\SRanipal\\sr_runtime.exe").FileVersion;
+            var srRuntimeVer = FileVersionInfo.GetVersionInfo(srInstallDir).FileVersion;
             
             Logger.LogInformation($"SRanipalExtTrackingModule: SRanipal version: {srRuntimeVer}");
             
