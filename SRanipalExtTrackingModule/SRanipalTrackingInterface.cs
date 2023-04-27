@@ -32,7 +32,13 @@ namespace SRanipalExtTrackingInterface
 
             // Look for SRanipal assemblies here. Placeholder for unmanaged assemblies not being embedded in the dll.
             var currentDllDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            SetDllDirectory(currentDllDirectory + "\\ModuleLibs");
+            
+            // Get the currently installed sr_runtime version. If it's above 1.3.6.* then we use ModuleLibs\\New
+            var srRuntimeVer = FileVersionInfo.GetVersionInfo("C:\\Program Files\\VIVE\\SRanipal\\sr_runtime.exe").FileVersion;
+            
+            Logger.LogInformation($"SRanipalExtTrackingModule: SRanipal version: {srRuntimeVer}");
+            
+            SetDllDirectory(currentDllDirectory + "\\ModuleLibs\\" + (srRuntimeVer.StartsWith("1.3.6") ? "New" : "Old"));
 
             Error eyeError = Error.UNDEFINED, lipError = Error.UNDEFINED;
 
