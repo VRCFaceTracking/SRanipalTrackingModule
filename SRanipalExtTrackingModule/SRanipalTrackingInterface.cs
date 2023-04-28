@@ -39,12 +39,21 @@ namespace SRanipalExtTrackingInterface
 
             if (srInstallDir == null)
             {
-                Logger.LogError("SRanipalExtTrackingModule: SRanipal not installed.");
-                return (false, false);
+                Logger.LogError("Bruh, SRanipal not installed. Assuming default path");
+                srInstallDir = "C:\\Program Files\\VIVE\\SRanipal\\sr_runtime.exe";
             }
             
             // Get the currently installed sr_runtime version. If it's above 1.3.6.* then we use ModuleLibs\\New
-            var srRuntimeVer = FileVersionInfo.GetVersionInfo(srInstallDir).FileVersion;
+            var srRuntimeVer = "1.3.1.1";   // We'll assume 1.3.1.1 if we can't find the version.
+            try
+            {
+                srRuntimeVer = FileVersionInfo.GetVersionInfo(srInstallDir).FileVersion;
+            }
+            catch
+            {
+                Logger.LogDebug("Smh you've got a bad install of SRanipal. Because you're like 97% likely to complain in the discord about this, I'll just assume you're using 1.3.1.1");
+                Logger.LogDebug("I swear to god if you complain about this and have also fucked around with the sranipal install dir and have a version higher than 1.3.6.* I will ban you faster than my father dropped me as a child do you understand");
+            }
             
             Logger.LogInformation($"SRanipalExtTrackingModule: SRanipal version: {srRuntimeVer}");
             
