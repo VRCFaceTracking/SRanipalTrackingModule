@@ -16,9 +16,11 @@ namespace SRanipalExtTrackingInterface
 {
     public class SRanipalExtTrackingInterface : ExtTrackingModule
     {
-        LipData_v2 lipData = default;
-        EyeData_v2 eyeData = default;
-        private static bool eyeEnabled = false, lipEnabled = false, isViveProEye = false;
+        LipData_v2 lipData;
+        EyeData_v2 eyeData;
+        private static bool eyeEnabled, lipEnabled, isViveProEye;
+        private static byte[] eyeImageCache, lipImageCache;
+        
         // Kernel32 SetDllDirectory
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         private static extern bool SetDllDirectory(string lpPathName);
@@ -107,6 +109,8 @@ namespace SRanipalExtTrackingInterface
                         }
                             
                     UnifiedTracking.EyeImageData.ImageSize = (200, 100);
+                    UnifiedTracking.EyeImageData.ImageData = new byte[200 * 100 * 4];
+                    eyeImageCache = new byte[200 * 100];
                 }
             }
             
@@ -114,10 +118,13 @@ namespace SRanipalExtTrackingInterface
             {
                 UnifiedTracking.LipImageData.SupportsImage = true;
                 UnifiedTracking.LipImageData.ImageSize = (SRanipal_Lip_v2.ImageWidth, SRanipal_Lip_v2.ImageHeight);
-                UnifiedTracking.LipImageData.ImageData = new byte[UnifiedTracking.LipImageData.ImageSize.x *
-                                                                       UnifiedTracking.LipImageData.ImageSize.y];
+                UnifiedTracking.LipImageData.ImageData = new byte[SRanipal_Lip_v2.ImageWidth *
+                                                                  SRanipal_Lip_v2.ImageHeight * 4];
+                
                 lipData.image = Marshal.AllocCoTaskMem(UnifiedTracking.LipImageData.ImageSize.x *
                                                        UnifiedTracking.LipImageData.ImageSize.x);
+
+                lipImageCache = new byte[SRanipal_Lip_v2.ImageWidth * SRanipal_Lip_v2.ImageHeight];
             }
 
             ModuleInformation = new ModuleMetadata()
@@ -199,13 +206,13 @@ namespace SRanipalExtTrackingInterface
             return true;
         }
 
-        private static byte[] ReadMemory(IntPtr offset, int size) {
-            var buffer = new byte[size];
-
+        private static byte[] ReadMemory(IntPtr offset, ref byte[] buf) {
             var bytesRead = 0;
-            Utils.ReadProcessMemory((int) _processHandle, offset, buffer, size, ref bytesRead);
+            var size = buf.Length;
+            
+            Utils.ReadProcessMemory((int) _processHandle, offset, buf, size, ref bytesRead);
 
-            return bytesRead != size ? null : buffer;
+            return bytesRead != size ? null : buf;
         }
         
         private Error UpdateEye()
@@ -218,7 +225,7 @@ namespace SRanipalExtTrackingInterface
             if (_processHandle == IntPtr.Zero || !UnifiedTracking.EyeImageData.SupportsImage) return updateResult;
             
             // Read 20000 image bytes from the predefined offset. 10000 bytes per eye.
-            var imageBytes = ReadMemory(_offset, 20000);
+            var imageBytes = ReadMemory(_offset, ref eyeImageCache);
             
             // Concatenate the two images side by side instead of one after the other
             byte[] leftEye = new byte[10000];
@@ -235,9 +242,21 @@ namespace SRanipalExtTrackingInterface
                 // Add 100 bytes from the right eye to the right side of the image
                 Array.Copy(rightEye, i*100, imageBytes, leftIndex + 100, 100);
             }
+            
+            for (int y = 0; y < 100; y++)
+            {
+                for (int x = 0; x < 200; x++)
+                {
+                    byte grayscaleValue = imageBytes[y * 200 + x];
 
-            // Write the image to the latest eye data
-            UnifiedTracking.EyeImageData.ImageData = imageBytes;
+                    // Set the R, G, B, and A channels to the grayscale value
+                    int index = (y * 200 + x) * 4;
+                    UnifiedTracking.EyeImageData.ImageData[index + 0] = grayscaleValue; // R
+                    UnifiedTracking.EyeImageData.ImageData[index + 1] = grayscaleValue; // G
+                    UnifiedTracking.EyeImageData.ImageData[index + 2] = grayscaleValue; // B
+                    UnifiedTracking.EyeImageData.ImageData[index + 3] = 255; // A (fully opaque)
+                }
+            }
 
             return updateResult;
         }
@@ -324,8 +343,23 @@ namespace SRanipalExtTrackingInterface
 
             if (lipData.image == IntPtr.Zero || !UnifiedTracking.LipImageData.SupportsImage) return updateResult;
 
-            Marshal.Copy(lipData.image, UnifiedTracking.LipImageData.ImageData, 0, UnifiedTracking.LipImageData.ImageSize.x *
+            Marshal.Copy(lipData.image, lipImageCache, 0, UnifiedTracking.LipImageData.ImageSize.x *
             UnifiedTracking.LipImageData.ImageSize.y);
+            
+            for (int y = 0; y < 400; y++)
+            {
+                for (int x = 0; x < 800; x++)
+                {
+                    byte grayscaleValue = lipImageCache[y * 800 + x];
+
+                    // Set the R, G, B, and A channels to the grayscale value
+                    int index = (y * 800 + x) * 4;
+                    UnifiedTracking.LipImageData.ImageData[index + 0] = grayscaleValue; // R
+                    UnifiedTracking.LipImageData.ImageData[index + 1] = grayscaleValue; // G
+                    UnifiedTracking.LipImageData.ImageData[index + 2] = grayscaleValue; // B
+                    UnifiedTracking.LipImageData.ImageData[index + 3] = 255; // A (fully opaque)
+                }
+            }
 
             return updateResult;
         }
