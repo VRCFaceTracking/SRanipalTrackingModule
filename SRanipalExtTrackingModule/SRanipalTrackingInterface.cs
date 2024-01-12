@@ -39,6 +39,20 @@ namespace SRanipalExtTrackingInterface
             // Get the directory of the sr_runtime.exe program from our start menu shortcut. This is where the SRanipal dlls are located.
             var srInstallDir = (string) Registry.LocalMachine.OpenSubKey(@"Software\VIVE\SRWorks\SRanipal")?.GetValue("ModuleFileName");
 
+            // Dang you SRanipal
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var srLogsDirectory = Path.Combine(localAppData + @"Low\HTC Corporation\SR_Logs\SRAnipal_Logs");
+
+            // Get yeeted logs
+            var srLogFiles = Directory.GetFiles(srLogsDirectory);
+            foreach (var log in srLogFiles)
+                using (var stream = File.Open(log, FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
+                {
+                    Logger.LogDebug("Clearing " + log);
+                    stream.SetLength(0);
+                    stream.Close();
+                }
+
             if (srInstallDir == null)
             {
                 Logger.LogError("Bruh, SRanipal not installed. Assuming default path");
