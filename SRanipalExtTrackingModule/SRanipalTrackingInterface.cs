@@ -37,52 +37,26 @@ namespace SRanipalExtTrackingInterface
             var currentDllDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             
             // Get the directory of the sr_runtime.exe program from our start menu shortcut. This is where the SRanipal dlls are located.
+            // Why are we casting this to a string when we are checking if it's null right below this?
             var srInstallDir = (string) Registry.LocalMachine.OpenSubKey(@"Software\VIVE\SRWorks\SRanipal")?.GetValue("ModuleFileName");
 
-            var clearedWithoutIssue = true;
-            var exceptionMessage = "";
+            // Dang you SRanipal
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var srLogsDirectory = Path.Combine(localAppData + @"Low\HTC Corporation\SR_Logs\SRAnipal_Logs");
             try
             {
-                // Dang you SRanipal
-                var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                var srLogsDirectory = Path.Combine(localAppData + @"Low\HTC Corporation\SR_Logs\SRAnipal_Logs");
-    
-                // Get yeeted logs
-                var srLogFiles = Directory.GetFiles(srLogsDirectory);
+                // Get logs that should be yeeted.
+                string[] srLogFiles = Directory.GetFiles(srLogsDirectory);
             
-                foreach (var log in srLogFiles)
+                foreach (string logFile in srLogFiles)
                 {
                     try {
-                        using (var stream = File.Open(log, FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
-                        {
-                            Logger.LogDebug("Clearing " + log);
-                            stream.SetLength(0);
-                            stream.Close();
-                        }
+                        File.Delete(logFile);
                     }
-                    catch (FileNotFoundException) {
-                        // keep trying to clear files, maybe this was a fluke, either way we are going to log the problem afterwards.
-                        clearedWithoutIssue = false;
-                        exceptionMessage = "Somehow the OS gave us a file that doesn't actually exist when we enumerated the directory.";
-                    }
-                    catch (UnauthorizedAccessException) {
-                        clearedWithoutIssue = false;
-                        exceptionMessage = "We don't have permission to open a log file.";
+                    catch {
+                        Logger.LogWarning($"Failed to delete log file \"{logFile}\"");
                     }
                 }
-            }
-            catch (DirectoryNotFoundException) {
-                clearedWithoutIssue = false;
-                exceptionMessage = "The SRanipal log directory doesn't exist.";
-            }
-            catch (Exception e) {
-                clearedWithoutIssue = false;
-                exceptionMessage = e.Message;
-            }
-
-            if (clearedWithoutIssue == false) {
-                Logger.LogWarning($"Failed to clear SRanipal logs from {srLogsDirectory}");
-                Logger.LogWarning($"Post Mortem: {exceptionMessage}");
             }
 
             if (srInstallDir == null)
