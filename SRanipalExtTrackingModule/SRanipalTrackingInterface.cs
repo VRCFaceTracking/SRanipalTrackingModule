@@ -49,7 +49,12 @@ namespace SRanipalExtTrackingInterface
             foreach (string logFile in srLogFiles)
             {
                 try {
-                    File.Delete(logFile);
+                    using (var stream = File.Open(logFile, FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
+                    {
+                        Logger.LogDebug($"Clearing \"{logFile}\"");
+                        stream.SetLength(0);
+                        stream.Close();
+                    }
                 }
                 catch {
                     Logger.LogWarning($"Failed to delete log file \"{logFile}\"");
