@@ -18,7 +18,11 @@ namespace SRanipalExtTrackingInterface
     {
         LipData_v2 lipData = default;
         EyeData_v2 eyeData = default;
-        private static bool eyeEnabled = false, lipEnabled = false, isViveProEye = false;
+        private static bool eyeEnabled = false, 
+                            lipEnabled = false, 
+                            isViveProEye = false,
+                            isWireless = false;
+
         // Kernel32 SetDllDirectory
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         private static extern bool SetDllDirectory(string lpPathName);
@@ -59,15 +63,10 @@ namespace SRanipalExtTrackingInterface
             
             SetDllDirectory(currentDllDirectory + "\\ModuleLibs\\" + (srRuntimeVer.StartsWith("1.3.6") ? "New" : "Old"));
 
-            Error eyeError = Error.UNDEFINED, lipError = Error.UNDEFINED;
-
             if (eyeAvailable)
-                eyeError = SRanipal_API.Initial(SRanipal_Eye_v2.ANIPAL_TYPE_EYE_V2, IntPtr.Zero);
-
+                HandleEye();
             if (expressionAvailable)
-                lipError = SRanipal_API.Initial(SRanipal_Lip_v2.ANIPAL_TYPE_LIP_V2, IntPtr.Zero);
-
-            HandleSrErrors(eyeError, lipError);
+                HandleLip();
 
             if (eyeEnabled && Utils.HasAdmin)
             {
@@ -136,15 +135,22 @@ namespace SRanipalExtTrackingInterface
             return (eyeEnabled, lipEnabled);
         }
 
-        private static void HandleSrErrors(Error eyeError, Error lipError)
+        private static void HandleEye()
         {
-            if (eyeError == Error.WORK)
-                eyeEnabled = true;
+            var eyeError = SRanipal_API.Initial(SRanipal_Eye_v2.ANIPAL_TYPE_EYE_V2, IntPtr.Zero);
+            eyeEnabled = eyeError == Error.WORK;
+        }
 
+        private static void HandleLip()
+        {
+            var lipError = SRanipal_API.Initial(SRanipal_Lip_v2.ANIPAL_TYPE_LIP_V2, IntPtr.Zero);
             if (lipError == Error.FOXIP_SO)
+            {
+                isWireless = true;
                 while (lipError == Error.FOXIP_SO)
                     lipError = SRanipal_API.Initial(SRanipal_Lip_v2.ANIPAL_TYPE_LIP_V2, IntPtr.Zero);
-            
+            }
+
             if (lipError == Error.WORK)
                 lipEnabled = true;
         }
@@ -157,6 +163,9 @@ namespace SRanipalExtTrackingInterface
         #region Update
 
         
+        private bool lipLock;
+        private bool eyeLock;
+
         public override void Update()
         {
             Thread.Sleep(10);
@@ -164,22 +173,36 @@ namespace SRanipalExtTrackingInterface
             if (Status != ModuleState.Active)
                 return;
             
-            if (lipEnabled && UpdateMouth() != Error.WORK)
+            if (lipEnabled && UpdateMouth() != Error.WORK && !lipLock)
             {
-                Logger.LogError("An error occured while getting lip data. This might be a wireless crash.");
+                lipLock = true;
+                Task.Run(() =>
+                {
+                    Logger.LogError("An error occured while getting lip data. Reinitializing SRanipal runtime.");
+                    if (isWireless)
+                    {
                 Logger.LogWarning("Waiting 30 seconds before reinitializing to account for wireless users.");
                 Thread.Sleep(30000);
-               // UnifiedLibManager.Initialize();
-                return;
+            }
+                    HandleLip();
+                    lipLock = false;
+                });
             }
 
-            if (eyeEnabled && UpdateEye() != Error.WORK)
+            if (eyeEnabled && UpdateEye() != Error.WORK && !eyeLock)
             {
-                Logger.LogError("An error occured while getting eye data. This might be a wireless crash.");
+                eyeLock = true;
+                Task.Run(() =>
+                {
+                    Logger.LogError("An error occured while getting eye data. Reinitializing SRanipal runtime.");
+                    if (isWireless)
+            {
                 Logger.LogWarning("Waiting 30 seconds before reinitializing to account for wireless users.");
                 Thread.Sleep(30000);
-                //UnifiedLibManager.Initialize();
-                return;
+                    }
+                    HandleEye();
+                    eyeLock = false;
+                });
             }
         }
 
