@@ -6,34 +6,33 @@ namespace ViveSR
 {
     namespace anipal
     {
-        public class SRanipal_API
+        public static class SRanipal_API
         {
-            /// <summary>
-            /// Invokes an anipal module.
-            /// </summary>
-            /// <param name="anipalType">The index of an anipal module.</param>
-            /// <param name="config">Indicates the resulting ViveSR.Error status of this method.</returns>
-            /// <returns>Indicates the resulting ViveSR.Error status of this method.</returns>
-            [DllImport("SRanipal")]
-            public static extern Error Initial(int anipalType, IntPtr config);
+            [DllImport("kernel32.dll", SetLastError = true)]
+            private static extern IntPtr LoadLibrary(string dllToLoad);
 
-            /// <summary>
-            /// Terminates an anipal module.
-            /// </summary>
-            /// <param name="anipalType">The index of an anipal module.</param>
-            /// <returns>Indicates the resulting ViveSR.Error status of this method.</returns>
-            [DllImport("SRanipal")]
-            public static extern Error Release(int anipalType);
+            [DllImport("kernel32.dll", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            private static extern bool FreeLibrary(IntPtr hModule);
 
-            /// <summary>
-            /// Gets the status of an anipal module.
-            /// </summary>
-            /// <param name="anipalType">The index of an anipal module.</param>
-            /// <param name="status">The status of an anipal module.</param>
-            /// <returns>Indicates the resulting ViveSR.Error status of this method.</returns>
-            [DllImport("SRanipal")]
-            public static extern Error GetStatus(int anipalType, out AnipalStatus status);
+            private static IntPtr module = IntPtr.Zero;
 
+            public static void InitialRuntime()
+            {
+                if (module != IntPtr.Zero) 
+                    ReleaseRuntime();
+                module = LoadLibrary("SRanipal.dll");
+            }
+
+            public static void ReleaseRuntime()
+            {
+                if (!FreeLibrary(module)) // ideally should never happen.
+                    throw new Exception($"Failed to release Lip module DLL.");
+                module = IntPtr.Zero;
+            }
+
+            [DllImport("SRanipal.dll", CallingConvention = CallingConvention.Cdecl)]
+            internal static extern Error Initial(int anipalType, IntPtr config);
         }
     }
 }
