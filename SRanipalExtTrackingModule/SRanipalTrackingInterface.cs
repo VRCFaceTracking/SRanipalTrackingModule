@@ -29,9 +29,6 @@ namespace SRanipalExtTrackingInterface
         internal static IntPtr _processHandle;
         internal static IntPtr _offset;
         
-        LipData_v2 lipData;
-        EyeData_v2 eyeData;
-        
         private static byte[] eyeImageCache, lipImageCache;
         
         // Kernel32 SetDllDirectory
@@ -169,6 +166,7 @@ namespace SRanipalExtTrackingInterface
                 lipData.image = Marshal.AllocCoTaskMem(UnifiedTracking.LipImageData.ImageSize.x *
                                                        UnifiedTracking.LipImageData.ImageSize.x);
 
+                UnifiedTracking.LipImageData.ImageData = new byte[SRanipal_Lip_v2.ImageWidth * SRanipal_Lip_v2.ImageHeight * 4];
                 lipImageCache = new byte[SRanipal_Lip_v2.ImageWidth * SRanipal_Lip_v2.ImageHeight];
             }
 
