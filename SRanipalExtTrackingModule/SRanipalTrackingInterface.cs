@@ -105,8 +105,8 @@ namespace SRanipalExtTrackingInterface
             }
             catch
             {
-                Logger.LogDebug("Smh you've got a bad install of SRanipal. Because you're like 97% likely to complain in the discord about this, I'll just assume you're using 1.3.1.1");
-                Logger.LogDebug("I swear to god if you complain about this and have also fucked around with the sranipal install dir and have a version higher than 1.3.6.* I will ban you faster than my father dropped me as a child do you understand");
+                Logger.LogWarning("Smh you've got a bad install of SRanipal. Because you're like 97% likely to complain in the discord about this, I'll just assume you're using 1.3.1.1");
+                Logger.LogWarning("I swear to god if you complain about this and have also fucked around with the sranipal install dir and have a version higher than 1.3.6.* I will ban you faster than my father dropped me as a child do you understand");
             }
             
             Logger.LogInformation($"SRanipalExtTrackingModule: SRanipal version: {srRuntimeVer}");
@@ -205,7 +205,7 @@ namespace SRanipalExtTrackingInterface
                 default:
                     break;
             }
-            Logger.LogInformation($"{name} failed to initialize: {error}");
+            Logger.LogError($"{name} failed to initialize: {error}");
             return false;
         }
         
