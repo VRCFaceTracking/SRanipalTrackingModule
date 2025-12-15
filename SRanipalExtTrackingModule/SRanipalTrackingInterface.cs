@@ -17,11 +17,6 @@ using VRCFaceTracking.Core.Types;
 
 namespace SRanipalExtTrackingInterface
 {
-    public static class ModuleInfo
-    {
-        public const string ModuleId = "A35DE9CB-298D-4A65-B055-AC33ED702008";
-    }
-
     public class SRanipalExtTrackingInterface : ExtTrackingModule
     {
         LipData_v2 lipData = default;
