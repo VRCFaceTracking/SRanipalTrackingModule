@@ -1,7 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 using Microsoft.Win32;
+using SRanipalExtTrackingModule;
+using System;
+using System.Diagnostics;
+using System.Drawing;
+using System.Runtime.InteropServices;
 using ViveSR;
 using ViveSR.anipal;
 using ViveSR.anipal.Eye;
@@ -41,7 +44,7 @@ namespace SRanipalExtTrackingInterface
             if (processes.Length <= 0) return false;
             _process = processes[0];
             _processHandle =
-                Utils.OpenProcess(Utils.PROCESS_VM_READ,
+                Utils.OpenProcess(0x0410,//Utils.PROCESS_VM_READ | Utils.PROCESS_QUERY_INFORMATION,
                     false, _process.Id);
             return true;
         }
@@ -131,25 +134,59 @@ namespace SRanipalExtTrackingInterface
 
                 if (found)
                 {
+                    _offset = 0;
+                    UnifiedTracking.EyeImageData.SupportsImage = false;
+
                     // Find the EyeCameraDevice.dll module inside sr_runtime, get it's offset and add hex 19190 to it for the image stream.
                     foreach (ProcessModule module in _process.Modules)
                         if (module.ModuleName == "EyeCameraDevice.dll")
                         {
-                            _offset = module.BaseAddress; 
-                            
-                            switch (_process.MainModule?.FileVersionInfo.FileVersion)
+#if DEBUG
+                            Logger.LogInformation($"SRanipalExtTrackingModule: found EyeCameraDevice.dll");
+#endif
+                            // Try to pattern scan first..
+                            IntPtr functionAddress = PatternScanner.Scan(_processHandle, module, "48 89 54 24 10 48 89 4C 24 08 56 57 48 ? ? ? 48 ? ? ? ? FF");
+                            if (functionAddress != IntPtr.Zero)
                             {
-                                case "1.3.2.0":
-                                    _offset += 0x19190;
+#if DEBUG
+                                Logger.LogInformation($"SRanipalExtTrackingModule: found eye image binary pattern");
+#endif
+                                IntPtr leaAddress = functionAddress + 0x93;
+                                IntPtr nextInstAddress = leaAddress + 0x7;
+                                byte[] buffer = new byte[4];
+                                int bytesRead = 0;
+                                if (Utils.ReadProcessMemory((int)_processHandle, leaAddress + 3, buffer, buffer.Length, ref bytesRead) && bytesRead == 4)
+                                {
+                                    int displacement = BitConverter.ToInt32(buffer, 0);
+                                    _offset = nextInstAddress + displacement;
                                     UnifiedTracking.EyeImageData.SupportsImage = true;
-                                    break;
-                                case "1.3.1.1":
-                                    _offset += 0x19100;
-                                    UnifiedTracking.EyeImageData.SupportsImage = true;
-                                    break;
-                                default:
-                                    UnifiedTracking.EyeImageData.SupportsImage = false;
-                                    break;
+                                }
+                                else
+                                {
+#if DEBUG
+                                    Logger.LogInformation($"SRanipalExtTrackingModule: failed to read memory");
+#endif
+                                }
+                            }
+
+                            if (!UnifiedTracking.EyeImageData.SupportsImage)
+                            {
+                                _offset = module.BaseAddress;
+
+                                switch (_process.MainModule?.FileVersionInfo.FileVersion)
+                                {
+                                    case "1.3.2.0":
+                                        _offset += 0x19190;
+                                        UnifiedTracking.EyeImageData.SupportsImage = true;
+                                        break;
+                                    case "1.3.1.1":
+                                        _offset += 0x19100;
+                                        UnifiedTracking.EyeImageData.SupportsImage = true;
+                                        break;
+                                    default:
+                                        UnifiedTracking.EyeImageData.SupportsImage = false;
+                                        break;
+                                }
                             }
                         }
                             
