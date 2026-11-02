@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,8 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="VRCFaceTracking.SDK">
+      <HintPath>../VRCFaceTracking/VRCFaceTracking.SDK/bin/Release/net10.0/VRCFaceTracking.SDK.dll</HintPath>
+    </Reference>
     <Reference Include="VRCFaceTracking.Core">
-      <HintPath>..\..\..\..\..\..\Program Files\WindowsApps\96ba052f-0948-44d8-86c4-a0212e4ae047_5.0.1.1_x64__d7rcq4vxghz0r\VRCFaceTracking.Core.dll</HintPath>
+      <HintPath>../VRCFaceTracking/VRCFaceTracking.Core/bin/Release/net10.0/VRCFaceTracking.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
 
