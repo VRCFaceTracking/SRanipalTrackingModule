@@ -74,20 +74,25 @@ namespace SRanipalExtTrackingInterface
             var srLogsDirectory = Path.Combine(localAppData + @"Low\HTC Corporation\SR_Logs\SRAnipal_Logs");
             
             // Get logs that should be yeeted.
-            string[] srLogFiles = Directory.GetFiles(srLogsDirectory);
-        
-            foreach (string logFile in srLogFiles)
+            if (Directory.Exists(srLogsDirectory))
             {
-                try {
-                    using (var stream = File.Open(logFile, FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
+                string[] srLogFiles = Directory.GetFiles(srLogsDirectory);
+
+                foreach (string logFile in srLogFiles)
+                {
+                    try
                     {
-                        Logger.LogDebug($"Clearing \"{logFile}\"");
-                        stream.SetLength(0);
-                        stream.Close();
+                        using (var stream = File.Open(logFile, FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
+                        {
+                            Logger.LogDebug($"Clearing \"{logFile}\"");
+                            stream.SetLength(0);
+                            stream.Close();
+                        }
                     }
-                }
-                catch {
-                    Logger.LogWarning($"Failed to delete log file \"{logFile}\"");
+                    catch
+                    {
+                        Logger.LogWarning($"Failed to delete log file \"{logFile}\"");
+                    }
                 }
             }
 
